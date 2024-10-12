@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+        <!-- Made with love by
+                    666666666666666
+            666666666666666666666666
+         66666666666666666666666666666
+      66666666666666666666666666666666666
+     6666666666666666666666666666666666666
+   66666666666666666666666666666666666666666
+  6666666666666666666666666666666666666666666
+  66666    266666662   166663     16666666666
+ 6666664    6666661   1664           666666666
+66666666    566663   7666    66662 266666666666
+666666661   16667   26664     56666666666666666
+666666664    661   266666          666666666666
+666666666    4    56666666641       66666666666
+6666666666       466666653666666    66666666666
+6666666666      4666666            566666666666
+66666666663    666666664         76666666666666
+ 666666666666666666666666666666666666666666666
+  6666666666666666666666666666666666666666666
+  6666666666666666666666666666666666666666666
+   66666666666666666666666666666666666666666
+     6666666666666666666666666666666666666
+      66666666666666666666666666666666666
+         666666666666666666666666666666
+            666666666666666666666666
+                666666666666666
+
+                :)
+    -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Local file Transfer</title>
+    <link rel="icon" href="https://www.viveksaikhom.com/statis/vii.png" type="image/png">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .dropzone {
+            margin: 20px auto;
+            padding: 50px;
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .dropzone.dragover {
+            border-color: #00aaff;
+            background-color: #e0f7ff;
+            color: #00aaff;
+        }
+
+        .file-list {
+            width: 75vw;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .progress {
+            margin: 20px auto;
+            width: 300px;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            border-radius: 5px;
+        }
+
+        #upload-speed {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        #browse-button {
+            margin: 20px;
+        }
+
+        .download-section {
+            width: 75vw;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            text-align: left;
+            box-sizing: border-box;
+        }
+
+        .download-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .download-section ul li {
+            margin: 10px 0;
+        }
+
+        .file {
+            display: inline-block;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            background-color: rgb(31, 30, 30);
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .custom-file-button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .custom-file-button:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 768px) {
+            #dropzone {
+        display: none;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <h1>Drag & Drop or Browse to Upload Files</h1>
+
+    <div id="dropzone" class="dropzone">
+        Drag & Drop Files Here
+    </div>
+
+    <div>
+        <button class="file" id="custom-file-button" onclick="document.getElementById('file-input').click();">Choose Files</button>
+        <input type="file" id="file-input" multiple onchange="handleFileSelection()" style="display: none;">
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progress-bar">0%</div>
+    </div>
+    <div id="upload-speed"></div>
+
+    <div class="download-section">
+        <h2 style="text-align: center;">Available Files for Download</h2>
+        <ul class="files">
+            {% for file in files %}
+            <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        var dropzone = document.getElementById('dropzone');
+        var progressBar = document.getElementById('progress-bar');
+        var uploadSpeed = document.getElementById('upload-speed');
+        var fileInput = document.getElementById('file-input');
+
+        dropzone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        });
+
+        function browseFiles() {
+            var files = fileInput.files;
+            if (files.length > 0) {
+                uploadFiles(files);
+            } else {
+                alert('Please select files to upload.');
+            }
+        }
+
+        function handleFileSelection() {
+            var files = fileInput.files;
+            if (files.length > 0) {
+                browseFiles();
+            }
+        }
+
+function fetchFileList() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/file_list', true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            var fileList = JSON.parse(xhr.responseText);
+            var filesUl = document.querySelector('.files');
+            filesUl.innerHTML = '';
+            fileList.forEach(function(file) {
+                var li = document.createElement('li');
+                li.innerHTML = `<a href="/download/${file}">${file}</a>`;
+                filesUl.appendChild(li);
+            });
+        } else {
+            alert('Failed to fetch the file list!');
+        }
+    };
+    xhr.send();
+}
+
+function uploadFiles(files) {
+    var formData = new FormData();
+    for (var i = 0; i < files.length; i++) {
+        formData.append('files[]', files[i]);
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload', true);
+
+    xhr.upload.addEventListener('progress', function (e) {
+        if (e.lengthComputable) {
+            var percentComplete = (e.loaded / e.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            progressBar.textContent = Math.round(percentComplete) + '%';
+
+            var speed = (e.loaded / (e.timeStamp / 1000)) / 1024;
+            uploadSpeed.textContent = 'Upload speed: ' + speed.toFixed(2) + ' KB/s';
+        }
+    });
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            alert('Files successfully uploaded!');
+            fetchFileList();
+        } else {
+            alert('Upload failed!');
+        }
+    };
+
+    xhr.send(formData);
+}
+
+    </script>
+</body>
+</html>
